@@ -6,6 +6,7 @@ const RegistrationForm = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -30,6 +31,11 @@ const RegistrationForm = () => {
       newErrors.email = 'Please enter a valid email format';
     }
 
+    // Phone validation
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    }
+
     // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -48,11 +54,16 @@ const RegistrationForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    
-    // Clear error on type
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user starts typing
     if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 
@@ -60,95 +71,114 @@ const RegistrationForm = () => {
     e.preventDefault();
 
     if (!validate()) {
-      toast.error('Please fix the validation errors.');
+      toast.error('Please fix the errors in the form');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const response = await axios.post('http://localhost:5000/api/register', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${API_URL}/api/register`, {
         username: formData.username,
         email: formData.email,
+        phone: formData.phone,
         password: formData.password
       });
 
-      toast.success(response.data.message);
-      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
-      setErrors({});
-    } catch (error) {
-      if (error.response && error.response.data.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error('Registration failed. Server error.');
+      if (response.data) {
+        toast.success(response.data.message || 'Registration successful!');
+        setFormData({ username: '', email: '', phone: '', password: '', confirmPassword: '' });
       }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to register. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-      <div className="card">
-        <h2 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Create an Account</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label>Username</label>
+    <div className="registration-container">
+      <div className="form-wrapper">
+        <h2>Create Account</h2>
+        <form onSubmit={handleSubmit} noValidate>
+          
+          <div className="input-group">
+            <label htmlFor="username">Username</label>
             <input
               type="text"
+              id="username"
               name="username"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Enter your username"
               className={errors.username ? 'error' : ''}
-              style={{ borderColor: errors.username ? 'var(--danger-color)' : '' }}
+              placeholder="Enter your username"
             />
-            {errors.username && <span className="form-error">{errors.username}</span>}
+            {errors.username && <span className="error-text">{errors.username}</span>}
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label>Email</label>
+          <div className="input-group">
+            <label htmlFor="email">Email</label>
             <input
               type="email"
+              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email"
               className={errors.email ? 'error' : ''}
-              style={{ borderColor: errors.email ? 'var(--danger-color)' : '' }}
+              placeholder="Enter your email"
             />
-            {errors.email && <span className="form-error">{errors.email}</span>}
+            {errors.email && <span className="error-text">{errors.email}</span>}
+          </div>
+          
+          <div className="input-group">
+            <label htmlFor="phone">Phone Number</label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className={errors.phone ? 'error' : ''}
+              placeholder="Enter your phone number"
+            />
+            {errors.phone && <span className="error-text">{errors.phone}</span>}
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label>Password</label>
+          <div className="input-group">
+            <label htmlFor="password">Password</label>
             <input
               type="password"
+              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter a strong password"
               className={errors.password ? 'error' : ''}
-              style={{ borderColor: errors.password ? 'var(--danger-color)' : '' }}
+              placeholder="Create a password"
             />
-            {errors.password && <span className="form-error">{errors.password}</span>}
+            {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label>Confirm Password</label>
+          <div className="input-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
             <input
               type="password"
+              id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirm your password"
               className={errors.confirmPassword ? 'error' : ''}
-              style={{ borderColor: errors.confirmPassword ? 'var(--danger-color)' : '' }}
+              placeholder="Confirm your password"
             />
-            {errors.confirmPassword && <span className="form-error">{errors.confirmPassword}</span>}
+            {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
           </div>
 
-          <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={isSubmitting}>
-            {isSubmitting ? 'Registering...' : 'Register'}
+          <button 
+            type="submit" 
+            className="submit-btn"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Registering...' : 'Sign Up'}
           </button>
         </form>
       </div>
